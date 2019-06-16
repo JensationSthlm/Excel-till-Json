@@ -1,18 +1,19 @@
 package com.company;
 
-public class Brott {
-
+public class Brott implements Comparable<Brott>{
 
     private String Inskrivningsdatum;
     private String näpo;
     private String basområde;
     private String gata;
-    private String brottskod;
-    private String antal;
+    private int brottskod;
+    private int antal;
     private String brottsdagStart;
     private String brottsdagSlut;
     private String brottsTidStart;
     private String brottsTidSlut;
+    private String startDateTime;
+    private String slutDateTime;
 
 
     public Brott(){
@@ -48,16 +49,25 @@ public class Brott {
     }
 
     public void setBrottskod(String brottskod){
-        this.brottskod =  brottskod;  //Integer.parseInt(brottskod);
+        // försöker först göra om stringen till integer. Går inte det sätt brottskoden till 0000 som ett tecken på att det inte fungerade.
+        try {
+            this.brottskod = Integer.parseInt(brottskod);
+        } catch (Exception e){
+            this.brottskod = 0000;
+        }
     }
-    public String getBrottskod(){
+    public int getBrottskod(){
         return this.brottskod;
     }
 
     public void setAntal (String antal){
-        this.antal = antal; //Integer.parseInt(antal);
+        try {
+            this.antal = Integer.parseInt(antal);
+        } catch (Exception e){
+            this.brottskod = 0000;
+        }
     }
-    public String getAntal(){
+    public int getAntal(){
         return this.antal;
     }
 
@@ -89,9 +99,29 @@ public class Brott {
         return this.brottsTidSlut;
     }
 
+    public void setStartDateTime(String StartDateTime){
+        this.startDateTime=StartDateTime;
+    }
+    public String getStartDateTime() {
+        return this.startDateTime;
+    }
+
+    public void setSlutDateTime(String slutDateTime ){
+        this.slutDateTime= slutDateTime;
+    }
+    public String getSlutDateTime(){
+        return this.slutDateTime;
+    }
+
     // skickar tillbaka lite information men inte all. Mest för att testa mot originalfil för att se att infon kommer med.
     @Override
     public String toString() {
-        return getNäpo()+" "+getGata()+" "+getBrottskod();
+        return getBrottsdagStart()+" "+getGata()+" "+getBrottskod();
     }
+    
+// Sorterar brotten beroende på vilken brottstid.
+    public int compareTo(Brott compareTo) {
+        return this.brottsdagStart.compareToIgnoreCase(compareTo.getBrottsdagStart());
+    }
+
 }

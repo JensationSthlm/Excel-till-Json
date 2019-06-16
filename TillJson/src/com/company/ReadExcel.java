@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class ReadExcel {
@@ -32,6 +33,8 @@ public class ReadExcel {
 
     }
 
+
+    // läser excelfil och gör alla brott till objekt och lägger i listan "listaBrott'.
     public void excelFileReader() throws Exception {
         FileInputStream fileInputStream = new FileInputStream(excelFile);
         // skapar en läsbarkopia av Excelfilen.
@@ -44,7 +47,11 @@ public class ReadExcel {
         DataFormatter dataFormatter = new DataFormatter();
         // skapar ett skrivarobjekt som kan skriva till fil
 
+
+        // skippar första raden i excelarket. Den med alla rubriker.
+        rowIterator.next();
         // så länge det finns en ny rad att hantera:
+
         while (rowIterator.hasNext()){
 
             // skapar en lista för att hålla informationen som finns i cellerna i varje rad. = information om ett brott.
@@ -83,10 +90,8 @@ public class ReadExcel {
         //stänger fileInputStream
         fileInputStream.close();
 
-        // fixar alla datum i brottsobjekten.
-        for (Brott brott :listaBrott){
-            fixDate(brott);
-        }
+        // fixar till alla datum i brottsobjektlistan.
+        fixaObjektetsAllaDatum();
 
         // Skriver ut antalet brott i listan
         System.out.println("Antal brott i listan: " + listaBrott.size());
@@ -107,90 +112,61 @@ public class ReadExcel {
         writer.closeBufferedWriter();
     }
 
-    // fixar till datum till formatet MM-DD-YY. Lägger till en 0 framför om det dag/månad bara är en siffra.
-    // fixar bara datum i form av av xx/xx/xx. För metoden avnänder sig av tecknet / för att bryta ner substrings.
-    // BÖR SKRIVAS OM FÖR ATT KORTAS NED: SKRIV EN LOOP.
-    public void fixDate(Brott brott){
-        String datum = brott.getInskrivningsdatum();
-        String arbetsDatum="";
-        String komplettDatum="";
 
-        // hoppar över om stringen är NULL eller inskrdat.
-        if (datum.equals("NULL")||datum.equals("inskrdat")){
-            return;
-        } else {
-            //sätter arbetsdatum till siffrorna innan första / tecknet. Siffrorna representerar månaden.
-            komplettDatum = datum.substring(0,datum.indexOf("/"));
-            // sätter datum till det kvarvarande efter första / tecknet.
-            datum = datum.substring(datum.indexOf("/")+1,datum.length());
-            // Om det bara finns en siffra lägg till en 0a innan.
-                if (komplettDatum.length()==1){
-                    komplettDatum ="0"+komplettDatum;
-                }
-
-            //sätter arbetsdatum till siffrorna innan första / tecknet. Siffrorna representerar dagen.
-             arbetsDatum = datum.substring(0,datum.indexOf("/"));
-             datum = datum.substring(datum.indexOf("/")+1);
-
-            // Om det bara finns en siffra lägg till en 0a innan.
-            if (arbetsDatum.length()==1){
-                arbetsDatum ="0"+arbetsDatum;
-             }
-
-            // lägger ihop det kompletta datumsträngen. DD-MM-YY
-            komplettDatum +="-" +arbetsDatum+"-"+datum;
-            // här sker anrop till annan metod som gör tidsobjekt och retunerar snygg string
-            komplettDatum = fixDate(komplettDatum);
-            brott.setInskrivningsdatum(komplettDatum);
-
-
-            // GÖR SAMMA SAK FAST MED BROTTSDAGSSTARTDATUM.
-
-            datum = brott.getBrottsdagStart();
-            if (datum.equals("NULL")||datum.equals("inskrdat")){
-                return;
-            } else {
-                komplettDatum = datum.substring(0, datum.indexOf("/"));
-                datum = datum.substring(datum.indexOf("/") + 1);
-                if (komplettDatum.length() == 1) {
-                    komplettDatum = "0" + komplettDatum;
-                }
-                arbetsDatum = datum.substring(0, datum.indexOf("/"));
-                datum = datum.substring(datum.indexOf("/") + 1);
-                if (arbetsDatum.length() == 1) {
-                    arbetsDatum = "0" + arbetsDatum;
-                }
-                komplettDatum += "-" + arbetsDatum + "-" + datum;
-                // här sker anrop till annan metod som gör tidsobjekt och retunerar snygg string
-                komplettDatum = fixDate(komplettDatum);
-                brott.setBrottsdagStart(komplettDatum);
-            }
-            // GÖR SAMMA SAK FAST MED BROTTSDAGSSLUTDATUM.
-
-            datum = brott.getBrottsdagSlut();
-            if (datum.equals("NULL")||datum.equals("inskrdat")){
-                return;
-            } else {
-                komplettDatum = datum.substring(0, datum.indexOf("/"));
-                datum = datum.substring(datum.indexOf("/") + 1, datum.length());
-                if (komplettDatum.length() == 1) {
-                    komplettDatum = "0" + komplettDatum;
-                }
-                arbetsDatum = datum.substring(0, datum.indexOf("/"));
-                datum = datum.substring(datum.indexOf("/") + 1);
-                if (arbetsDatum.length() == 1) {
-                    arbetsDatum = "0" + arbetsDatum;
-                }
-                komplettDatum += "-" + arbetsDatum + "-" + datum;
-                // här sker anrop till annan metod som gör tidsobjekt och retunerar snygg string
-                komplettDatum = fixDate(komplettDatum);
-                brott.setBrottsdagSlut(komplettDatum);
-            }
+    // metoden som hanterar alla undermetoder som fixar datum i brottsobjekten.
+    public void fixaObjektetsAllaDatum(){
+        for (Brott brott: listaBrott) {
+            fixDateToString(brott);
+            brott.setStartDateTime(brott.getBrottsdagStart()+" "+fixTime(brott.getBrottsTidStart()));
+            brott.setSlutDateTime(brott.getBrottsdagSlut()+" "+fixTime(brott.getBrottsTidSlut()));
         }
     }
 
-    // skapar ett tidsobjekt och retunerar en snyggare string.
-    public String fixDate(String date){
+    // fixar alla kortadatum i brottsobjektet till yyyy-mm-dd genom att anropa hjälp metoder.
+    public void fixDateToString(Brott brott) {
+            brott.setInskrivningsdatum(fixDateShort(brott.getInskrivningsdatum()));
+            brott.setBrottsdagStart(fixDateShort(brott.getBrottsdagStart()));
+            brott.setBrottsdagSlut(fixDateShort(brott.getBrottsdagSlut()));
+
+    }
+
+    // fixar till datum till formatet MM-DD-YY. Lägger till en 0 framför om det dag/månad bara är en siffra.
+    // fixar bara datum i form av av xx/xx/xx. För metoden avnänder sig av tecknet / för att bryta ner substrings.
+     public String fixDateShort (String oredigerad) {
+        String datum = oredigerad;
+        String arbetsDatum = "";
+        String komplettDatum = "";
+
+        if (datum.equals("NULL") || datum.equals("inskrdat")) {
+            return "NULL";
+        } else {
+
+            //sätter arbetsdatum till siffrorna innan första / tecknet. Siffrorna representerar månaden.
+            komplettDatum = datum.substring(0, datum.indexOf("/"));
+            // sätter datum till det kvarvarande efter första / tecknet.
+            datum = datum.substring(datum.indexOf("/") + 1, datum.length());
+            // Om det bara finns en siffra lägg till en 0a innan.
+            if (komplettDatum.length() == 1) {
+                komplettDatum = "0" + komplettDatum;
+            }
+            //sätter arbetsdatum till siffrorna innan första / tecknet. Siffrorna representerar dagen.
+            arbetsDatum = datum.substring(0, datum.indexOf("/"));
+            datum = datum.substring(datum.indexOf("/") + 1);
+            // Om det bara finns en siffra lägg till en 0a innan.
+            if (arbetsDatum.length() == 1) {
+                arbetsDatum = "0" + arbetsDatum;
+            }
+            // lägger ihop det kompletta datumsträngen. DD-MM-YY
+            komplettDatum += "-" + arbetsDatum + "-" + datum;
+            // här sker anrop till annan metod som gör tidsobjekt och retunerar yyyy-mm-dd
+            komplettDatum = niceDateString(komplettDatum);
+
+            return komplettDatum;
+        }
+    }
+
+    // skapar ett tidsobjekt som tar MM-dd-yy och retunerar en string med yyyy-mm-dd.
+    public String niceDateString(String date){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yy");
         LocalDate localDate = LocalDate.parse(date,formatter);
 
@@ -198,19 +174,14 @@ public class ReadExcel {
 
     }
 
-    // från Jacksonrepositorin, skapar en sträng med information från brottsobjektet i Jsonformat.
-     public void writeJson() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        for (Brott brott : listaBrott) {
-            String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(brott);
-            writeToFile(json);
-        }
-        // Måste tydligen ha med detta annars vägrar den att skriva fill fil.
-        bufferedWriterClose();
-    }
+   // tar en tidsangivelsse enligt HHmm och gör om den till HH:mm.
+    public String fixTime(String brottTid){
+        String tidRedigerad = brottTid.substring(0,2)+":"+brottTid.substring(2);
+        return tidRedigerad;
+            }
 
     // skapar nytt brottobjekt.
-    public Brott createBrott(ArrayList<String> information){
+    public void createBrott(ArrayList<String> information){
 
         Brott brott = new Brott();
 
@@ -228,7 +199,39 @@ public class ReadExcel {
 
         // lägger till brottet i listan för alla brott.
         listaBrott.add(brott);
-        return brott;
+    }
 
+    // från Jacksonrepositorin, skapar en sträng med information från brottsobjektet i Jsonformat.
+    public void writeJson() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        for (Brott brott : listaBrott) {
+            String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(brott);
+            writeToFile(json);
+        }
+        // Måste tydligen ha med detta annars vägrar den att skriva fill fil.
+        // Kanske för att den lagar allt den ska skriva i bufferedWriter och skriver först till filen när den stängs?
+        bufferedWriterClose();
+    }
+
+    // söker efter objekt med en viss adress
+    public void searchAdress(String adress){
+        // skapar en lista med sökresultat
+        ArrayList<Brott>searchResult = new ArrayList<Brott>();
+        for (Brott brott : listaBrott){
+            if (brott.getGata().equalsIgnoreCase(adress)){
+                searchResult.add(brott);
+            }
+         }
+
+// sorterar den sökta listan efter datum. Tidigast först.
+    Collections.sort(searchResult);
+
+        for (Brott brott : searchResult){
+            System.out.println(brott.toString());
+        }
+        System.out.println();
+        System.out.println("Antal brott på " + adress +": "+searchResult.size());
+        System.out.println();
+        searchResult.clear();
     }
 }

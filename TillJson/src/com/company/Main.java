@@ -4,12 +4,16 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        ReadExcel read = new ReadExcel("C:\\Users\\Jens\\Downloads\\test.xlsx");
+        Interface start = new Interface();
+        start.meny();
+
+
+        /*
+        ReadExcel read = new ReadExcel("C:\\Users\\Jens\\Downloads\\jö111.xlsx");
         read.excelFileReader();
         read.writeJson();
-
-
-
+        read.searchAdress("ODENGATAN");
+        */
 
     }
 }
